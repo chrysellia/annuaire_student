@@ -1,0 +1,55 @@
+# version: '3.8'
+services:
+  db:
+    image: mariadb:11
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpwd
+      MYSQL_DATABASE: students
+      MYSQL_USER: student
+      MYSQL_PASSWORD: studentpwd
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - backend
+
+  backend:
+    build: ./backend
+    restart: always
+    environment:
+      DB_HOST: db
+      DB_USER: student
+      DB_PASSWORD: studentpwd
+      DB_NAME: students
+    depends_on:
+      - db
+    networks:
+      - backend
+      - frontend
+    ports:
+      - "5000:5000"
+
+  frontend:
+    build: ./frontend
+    restart: always
+    depends_on:
+      - backend
+    networks:
+      - frontend
+    ports:
+      - "3000:80"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    # Proxy API calls to backend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  db_data:
+
+networks:
+  backend:
+  frontend:
