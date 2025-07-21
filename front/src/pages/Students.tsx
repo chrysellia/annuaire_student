@@ -91,19 +91,19 @@ const Students: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {students.map((student) => (
+              {students && students.map((student) => (
                 <tr key={student.id} className="border-t">
-                  <td className="px-4 py-2">{student.name}</td>
+                  <td className="px-4 py-2">{student.first_name + " " + student.last_name}</td>
                   <td className="px-4 py-2">{student.email}</td>
                   <td className={
                     "px-4 py-2 " +
-                    (student.status === 1
+                    (student.status === "active"
                       ? "text-green-700"
-                      : student.status === 0
+                      : student.status === "inactive"
                         ? "text-yellow-700"
                         : "text-red-700")
                   }>
-                    {student.status === 1 ? "Active" : "Inactive"}
+                    {student.status === "active" ? "Active" : "Inactive"}
                   </td>
                 </tr>
               ))}

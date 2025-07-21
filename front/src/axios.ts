@@ -2,7 +2,7 @@ import axios from "axios";
 import type { AxiosInstance } from "axios";
 
 // You can change this baseURL to match your backend API endpoint
-const BASE_URL = "http://localhost:9090";
+const BASE_URL = "http://localhost:5000";
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: BASE_URL,
