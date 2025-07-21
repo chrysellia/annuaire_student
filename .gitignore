@@ -1,2 +1,7 @@
 /data
 /backend/.env
+
+# Python cache folders
+__pycache__/
+*.py[cod]
+*$py.class
