@@ -1,55 +1,57 @@
-# version: '3.8'
 services:
   db:
-    image: mariadb:11
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+    command: --default-authentication-plugin=mysql_native_password
     restart: always
+    volumes:
+      - ./data/:/var/lib/mysql:rw # persistent volume
+      - ./mysqld.conf:/etc/mysql/mysql.conf.d/mysqld.cnf # config mysql server
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: rootpwd
-      MYSQL_DATABASE: students
-      MYSQL_USER: student
-      MYSQL_PASSWORD: studentpwd
-    volumes:
-      - db_data:/var/lib/mysql
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      MARIADB_TCP_PORT: ${DB_PORT:-3306}
+      MARIADB_ROOT_PASSWORD: ${DB_PASSWORD:-LS4wt7e8}
+      MARIADB_ROOT_HOST: '%'
+      MARIADB_DATABASE: ${DB_NAME:-students}
+      DB_USER: ${DB_USER:-student}
+      DB_PASSWORD: ${DB_PASSWORD:-LS4wt7e8}
     networks:
-      - backend
+      - app-network
 
   backend:
     build: ./backend
     restart: always
     environment:
-      DB_HOST: db
-      DB_USER: student
-      DB_PASSWORD: studentpwd
-      DB_NAME: students
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_USER: ${DB_USER:-student}
+      DB_PASSWORD: ${DB_PASSWORD:-LS4wt7e8}
+      DB_NAME: ${DB_NAME:-students}
+      DB_SCHEMA: ${DB_SCHEMA:-public}
     depends_on:
       - db
-    networks:
-      - backend
-      - frontend
     ports:
       - "5000:5000"
+    networks:
+      - app-network
 
   frontend:
-    build: ./frontend
+    build: ./front
     restart: always
     depends_on:
       - backend
     networks:
-      - frontend
+      - app-network
     ports:
       - "3000:80"
     environment:
       - CHOKIDAR_USEPOLLING=true
     # Proxy API calls to backend
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-
-volumes:
-  db_data:
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
 
 networks:
-  backend:
-  frontend:
+  app-network:
+    driver: bridge

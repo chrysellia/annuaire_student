@@ -1,17 +1,14 @@
 # Utilise une image Node officielle comme environnement de build
 FROM node:20 AS build
 
+# Copie le reste de l'application
+COPY . /app
+
 # Définit le répertoire de travail
 WORKDIR /app
 
-# Copie les fichiers de dépendances
-COPY package.json package-lock.json ./
-
 # Installe les dépendances
 RUN npm install
-
-# Copie le reste de l'application
-COPY . .
 
 # Build l'application (adapte la commande si tu utilises autre chose que Vite)
 RUN npm run build
