@@ -15,11 +15,27 @@ CORS(app)
 def get_students():
     try:
         students = database_manager.select('students')
-        return jsonify(students.to_dict(orient='records'))
+        
+        # Convert DataFrame to dict and handle date serialization
+        students_dict = students.to_dict(orient='records')
+        
+        # Convert date objects to strings for JSON serialization
+        for student in students_dict:
+            for key, value in student.items():
+                if hasattr(value, 'strftime'):  # Check if it's a date/datetime object
+                    student[key] = value.strftime('%Y-%m-%d') if hasattr(value, 'date') else value.strftime('%Y-%m-%d')
+                elif pd.isna(value):  # Handle NaN values
+                    student[key] = None
+        
+        response = jsonify(students_dict)
+        response.headers['Content-Type'] = 'application/json'
+        return response
     except Exception as e:
         from flask import current_app
         current_app.logger.exception("Error in /students")
-        return jsonify({'error': str(e)}), 500
+        error_response = jsonify({'error': str(e)})
+        error_response.headers['Content-Type'] = 'application/json'
+        return error_response, 500
 
 @app.route('/students', methods=['POST'])
 def add_student():
@@ -30,4 +46,4 @@ def add_student():
 if __name__ == '__main__':
     # Enable debug mode only if FLASK_ENV is 'development'
     debug_mode = os.environ.get('FLASK_ENV', '').lower() == 'development'
-    app.run(host='0.0.0.0', port=9090, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
