@@ -5,7 +5,8 @@ import Typography from '@mui/material/Typography';
 
 interface AddStudentFormProps {
   form: {
-    name: string;
+    first_name: string;
+    last_name: string;
     email: string;
     status: number;
   };
@@ -47,11 +48,22 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
       </Typography>
       <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div>
-          <label style={{ display: 'block', fontWeight: 500, marginBottom: 4, color: '#1565c0' }}>Name</label>
+          <label style={{ display: 'block', fontWeight: 500, marginBottom: 4, color: '#1565c0' }}>First Name</label>
           <input
             type="text"
-            name="name"
-            value={form.name}
+            name="first_name"
+            value={form.first_name}
+            onChange={onChange}
+            required
+            style={{ width: '100%', border: '1px solid #90caf9', borderRadius: 4, padding: 8 }}
+          />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontWeight: 500, marginBottom: 4, color: '#1565c0' }}>Last Name</label>
+          <input
+            type="text"
+            name="last_name"
+            value={form.last_name}
             onChange={onChange}
             required
             style={{ width: '100%', border: '1px solid #90caf9', borderRadius: 4, padding: 8 }}

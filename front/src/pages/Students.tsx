@@ -3,15 +3,55 @@ import axios from "../axios";
 import type { Student } from "../types";
 import Modal from '@mui/material/Modal';
 import AddStudentForm from "../components/AddStudentForm";
+import EditStudentDrawer from "../components/EditStudentDrawer";
 
 const Students: React.FC = () => {
+  // Main state
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', status: 1 });
+  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', status: 1 });
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  // Edit drawer state
+  const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+  const [editForm, setEditForm] = useState<Partial<Student>>({});
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editFormError, setEditFormError] = useState<string | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+
+  const openEditDrawer = (student: Student) => {
+    setSelectedStudent(student);
+    setEditForm({ ...student });
+    setEditFormError(null);
+    setEditDrawerOpen(true);
+  };
+  const closeEditDrawer = () => {
+    setEditDrawerOpen(false);
+    setSelectedStudent(null);
+    setEditForm({});
+    setEditFormError(null);
+  };
+  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+  };
+  const handleEditFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedStudent) return;
+    setEditSubmitting(true);
+    setEditFormError(null);
+    try {
+      await axios.put(`/students/${selectedStudent.id}`, editForm);
+      fetchStudents();
+      closeEditDrawer();
+    } catch (err) {
+      setEditFormError("Failed to update student.");
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
 
   const fetchStudents = () => {
     setLoading(true);
@@ -56,7 +96,7 @@ const Students: React.FC = () => {
       });
       fetchStudents(); // Refetch students after adding
       setShowModal(false);
-      setForm({ name: '', email: '', status: 1 });
+      setForm({ first_name: '', last_name: '', email: '', status: 1 });
     } catch (err) {
       setFormError("Failed to add student.");
     } finally {
@@ -85,15 +125,18 @@ const Students: React.FC = () => {
           <table className="min-w-full bg-white rounded shadow">
             <thead>
               <tr>
-                <th className="px-4 py-2 text-left">Name</th>
+                <th className="px-4 py-2 text-left">Last Name</th>
+                <th className="px-4 py-2 text-left">First Name</th>
                 <th className="px-4 py-2 text-left">Email</th>
                 <th className="px-4 py-2 text-left">Status</th>
+                <th className="px-4 py-2 text-left">Actions</th>
               </tr>
             </thead>
             <tbody>
               {students && students.map((student) => (
                 <tr key={student.id} className="border-t">
-                  <td className="px-4 py-2">{student.first_name + " " + student.last_name}</td>
+                  <td className="px-4 py-2">{student.last_name}</td>
+                  <td className="px-4 py-2">{student.first_name}</td>
                   <td className="px-4 py-2">{student.email}</td>
                   <td className={
                     "px-4 py-2 " +
@@ -104,6 +147,14 @@ const Students: React.FC = () => {
                         : "text-red-700")
                   }>
                     {student.status === "active" ? "Active" : "Inactive"}
+                  </td>
+                  <td className="px-4 py-2 text-right">
+                    <button
+                      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      onClick={() => openEditDrawer(student)}
+                    >
+                      Edit
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -126,6 +177,15 @@ const Students: React.FC = () => {
           onCancel={() => setShowModal(false)}
         />
       </Modal>
+      <EditStudentDrawer
+        open={editDrawerOpen}
+        onClose={closeEditDrawer}
+        onChange={handleEditFormChange}
+        onSubmit={handleEditFormSubmit}
+        submitting={editSubmitting}
+        form={editForm}
+        formError={editFormError}
+      />
     </div>
   );
 };
