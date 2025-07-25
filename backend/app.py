@@ -4,14 +4,67 @@ from dotenv import load_dotenv
 from classes.database import database_manager
 import os
 import pandas as pd
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required
+from werkzeug.security import check_password_hash
 # Load environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
+# JWT configuration
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'super-secret-key')
+jwt = JWTManager(app)
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+
+    if not username or not password:
+        return jsonify({'msg': 'Missing username or password'}), 400
+
+    # Query user from DB
+    users = database_manager.select('users', where_clause=f"username = '{username}'")
+    if users.empty:
+        return jsonify({'msg': 'User not found'}), 400
+    user = users.iloc[0]
+    # For demo: Accept plain password or hashed password (if hash present)
+    db_password = user['password'] if 'password' in user else user.get('password_hash')
+    if not db_password:
+        return jsonify({'msg': 'User password not set'}), 400
+    # Accept either plain or hashed (for legacy)
+    if db_password == password or check_password_hash(db_password, password):
+        # Ensure id is a native int for JWT
+        user_id = user['id']
+        try:
+            import numpy as np
+            if isinstance(user_id, np.integer):
+                user_id = int(user_id)
+        except ImportError:
+            pass
+        # Flask-JWT-Extended expects identity to be a string or int, not a dict
+        token = create_access_token(identity=str(user_id))
+        # Convert user row to dict and cast all values to native Python types
+        user_dict = user.to_dict()
+        for k, v in user_dict.items():
+            try:
+                # Convert numpy types to native Python
+                import numpy as np
+                if isinstance(v, (np.integer, np.floating)):
+                    user_dict[k] = v.item()
+                elif isinstance(v, np.ndarray):
+                    user_dict[k] = v.tolist()
+            except ImportError:
+                pass
+        return jsonify(token=token, user=user_dict), 200
+    else:
+        return jsonify({'msg': 'Bad credentials'}), 401
 
 @app.route('/students', methods=['GET'])
+@jwt_required()
 def get_students():
     try:
         students = database_manager.select('students')
@@ -55,6 +108,7 @@ def generate_student_number():
     return f"STU{next_num:06d}"
 
 @app.route('/students', methods=['POST'])
+@jwt_required()
 def add_student():
     try:
         data = request.json
@@ -76,6 +130,7 @@ def add_student():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/students/<int:student_id>', methods=['PUT'])
+@jwt_required()
 def update_student(student_id):
     try:
         data = request.json
