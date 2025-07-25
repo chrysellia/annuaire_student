@@ -1,12 +1,12 @@
 import axios from "axios";
 import type { AxiosInstance } from "axios";
 
-// You can change this baseURL to match your backend API endpoint
-const BASE_URL = "http://localhost:5000";
+// Use Vite env variable for the API base URL
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: BASE_URL,
-  timeout: 10000, // 10 seconds
+  timeout: 300000, // 300 seconds
   headers: {
     'Content-Type': 'application/json',
     // Add other default headers here
