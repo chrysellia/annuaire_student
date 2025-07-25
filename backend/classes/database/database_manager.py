@@ -12,8 +12,14 @@ class DatabaseManager:
         if drivername == "mysql":
             drivername = "mysql+pymysql"
             self.is_mysql = True
+            self.is_postgresql = False
+        elif drivername == "postgresql":
+            drivername = "postgresql+psycopg2"
+            self.is_mysql = False
+            self.is_postgresql = True
         else:
             self.is_mysql = False
+            self.is_postgresql = False
         connection_url = sa.engine.URL.create(
             drivername=drivername,
             username=db_config["user"],
@@ -28,7 +34,7 @@ class DatabaseManager:
             # pool_recycle=1800
         )
         self.schema = db_config["schema"]
-        # Only set schema for non-MySQL
+        # Only set schema for non-MySQL (including PostgreSQL)
         if not self.is_mysql:
             self.metadata = MetaData(schema=self.schema)
         else:

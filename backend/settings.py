@@ -9,6 +9,6 @@ mapping.create_db_config(
     db_password=mapping.DB_PASSWORD,
     db_name=mapping.DB_NAME,
     schema=mapping.DB_SCHEMA,
-    db_type="mysql",
+    db_type=mapping.DB_TYPE,
     db_config_name="DB_DEFAULT"
 )
