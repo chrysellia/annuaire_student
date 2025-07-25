@@ -68,6 +68,9 @@ def run_seeder_if_needed():
         print(f"💥 Seeder error: {e}")
         import traceback
         traceback.print_exc()
+        # Remove flag file if it was created in error
+        if os.path.exists(SEED_FLAG_FILE):
+            os.remove(SEED_FLAG_FILE)
         return False
 
 def start_flask_app():
