@@ -11,7 +11,7 @@ const Students: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', status: 1 });
+  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', status: 'active' });
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   // Edit drawer state
@@ -20,6 +20,11 @@ const Students: React.FC = () => {
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editFormError, setEditFormError] = useState<string | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const openEditDrawer = (student: Student) => {
     setSelectedStudent(student);
@@ -53,11 +58,17 @@ const Students: React.FC = () => {
   };
 
 
-  const fetchStudents = () => {
+  const fetchStudents = (pageParam = page, pageSizeParam = pageSize) => {
     setLoading(true);
-    axios.get<Student[]>("/students")
-      .then((res: { data: Student[] }) => {
-        setStudents(res.data);
+    axios.get(`/students`, {
+      params: { page: pageParam, page_size: pageSizeParam }
+    })
+      .then((res) => {
+        setStudents(res.data.students);
+        setTotal(res.data.total);
+        setPage(res.data.page);
+        setPageSize(res.data.page_size);
+        setTotalPages(res.data.total_pages);
         setError(null);
       })
       .catch((_: unknown) => {
@@ -68,8 +79,9 @@ const Students: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchStudents();
-  }, []);
+    fetchStudents(page, pageSize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize]);
 
   // Modal close on Escape
   useEffect(() => {
@@ -82,6 +94,7 @@ const Students: React.FC = () => {
   }, [showModal]);
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    console.log("Form change:", e.target.name, e.target.value);
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -91,12 +104,11 @@ const Students: React.FC = () => {
     setFormError(null);
     try {
       await axios.post<Student>("/students", {
-        ...form,
-        status: Number(form.status),
+        ...form
       });
       fetchStudents(); // Refetch students after adding
       setShowModal(false);
-      setForm({ first_name: '', last_name: '', email: '', status: 1 });
+      setForm({ first_name: '', last_name: '', email: '', status: 'active' });
     } catch (err) {
       setFormError("Failed to add student.");
     } finally {
@@ -122,44 +134,80 @@ const Students: React.FC = () => {
         ) : error ? (
           <div className="text-red-600 py-6">{error}</div>
         ) : (
-          <table className="min-w-full bg-white rounded shadow">
-            <thead>
-              <tr>
-                <th className="px-4 py-2 text-left">Last Name</th>
-                <th className="px-4 py-2 text-left">First Name</th>
-                <th className="px-4 py-2 text-left">Email</th>
-                <th className="px-4 py-2 text-left">Status</th>
-                <th className="px-4 py-2 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {students && students.map((student) => (
-                <tr key={student.id} className="border-t">
-                  <td className="px-4 py-2">{student.last_name}</td>
-                  <td className="px-4 py-2">{student.first_name}</td>
-                  <td className="px-4 py-2">{student.email}</td>
-                  <td className={
-                    "px-4 py-2 " +
-                    (student.status === "active"
-                      ? "text-green-700"
-                      : student.status === "inactive"
-                        ? "text-yellow-700"
-                        : "text-red-700")
-                  }>
-                    {student.status === "active" ? "Active" : "Inactive"}
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    <button
-                      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                      onClick={() => openEditDrawer(student)}
-                    >
-                      Edit
-                    </button>
-                  </td>
+          <>
+            <table className="min-w-full bg-white rounded shadow">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2 text-left">Last Name</th>
+                  <th className="px-4 py-2 text-left">First Name</th>
+                  <th className="px-4 py-2 text-left">Email</th>
+                  <th className="px-4 py-2 text-left">Status</th>
+                  <th className="px-4 py-2 text-left">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {students && students.map((student) => (
+                  <tr key={student.id} className="border-t">
+                    <td className="px-4 py-2">{student.last_name}</td>
+                    <td className="px-4 py-2">{student.first_name}</td>
+                    <td className="px-4 py-2">{student.email}</td>
+                    <td className={
+                      "px-4 py-2 " +
+                      (student.status === "active"
+                        ? "text-green-700"
+                        : student.status === "inactive"
+                          ? "text-yellow-700"
+                          : "text-red-700")
+                    }>
+                      {String(student.status).charAt(0).toUpperCase() + String(student.status).slice(1)}
+                    </td>
+                    <td className="px-4 py-2 text-right">
+                      <button
+                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        onClick={() => openEditDrawer(student)}
+                      >
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {/* Pagination Controls */}
+            <div className="flex items-center justify-between mt-4">
+              <div>
+                Page {page} of {totalPages} (Total: {total})
+              </div>
+              <div className="flex gap-2">
+                <button
+                  className="px-3 py-1 rounded border bg-gray-100 disabled:opacity-60"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Previous
+                </button>
+                <button
+                  className="px-3 py-1 rounded border bg-gray-100 disabled:opacity-60"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  Next
+                </button>
+                <select
+                  className="ml-2 px-2 py-1 border rounded"
+                  value={pageSize}
+                  onChange={e => {
+                    setPageSize(Number(e.target.value));
+                    setPage(1);
+                  }}
+                >
+                  {[5, 10, 20, 50].map(size => (
+                    <option key={size} value={size}>{size} / page</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </>
         )}
       </div>
       <Modal

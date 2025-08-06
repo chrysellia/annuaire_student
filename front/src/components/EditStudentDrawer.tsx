@@ -74,7 +74,9 @@ const EditStudentDrawer: React.FC<EditStudentDrawerProps> = ({
               required
             >
               <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
+              <option value="graduated">Diplomé</option>
+              <option value="suspended">Suspendu</option>
+              <option value="dropped">Abandonné</option>
             </select>
           </div>
           {/* Add more fields as needed */}

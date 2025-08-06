@@ -8,7 +8,7 @@ interface AddStudentFormProps {
     first_name: string;
     last_name: string;
     email: string;
-    status: number;
+    status: string;
   };
   formError: string | null;
   submitting: boolean;
@@ -41,7 +41,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
       }}
     >
       <Typography id="add-student-title" variant="h6" component="h2" sx={{ mb: 1 }}>
-        Add New Student
+        Add a new student
       </Typography>
       <Typography id="add-student-description" sx={{ mb: 2 }}>
         Fill out the form to add a new student.
@@ -88,8 +88,10 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
             onChange={onChange}
             style={{ width: '100%', border: '1px solid #90caf9', borderRadius: 4, padding: 8 }}
           >
-            <option value="1">Active</option>
-            <option value="0">Inactive</option>
+            <option value="active">Active</option>
+            <option value="graduated">Diplomé</option>
+            <option value="suspended">Suspendu</option>
+            <option value="dropped">Abandonné</option>
           </select>
         </div>
         {formError && <div style={{ color: '#d32f2f' }}>{formError}</div>}
