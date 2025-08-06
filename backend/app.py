@@ -67,20 +67,38 @@ def login():
 @jwt_required()
 def get_students():
     try:
-        students = database_manager.select('students')
-        
-        # Convert DataFrame to dict and handle date serialization
+        # Get pagination params
+        page = int(request.args.get('page', 1))
+        page_size = int(request.args.get('page_size', 10))
+        if page < 1:
+            page = 1
+        if page_size < 1 or page_size > 100:
+            page_size = 10
+        offset = (page - 1) * page_size
+
+        # Get total count
+        all_students = database_manager.select('students')
+        total = len(all_students)
+
+        # Get paginated students
+        students = all_students.iloc[offset:offset+page_size]
         students_dict = students.to_dict(orient='records')
-        
+
         # Convert date objects to strings for JSON serialization
         for student in students_dict:
             for key, value in student.items():
-                if hasattr(value, 'strftime'):  # Check if it's a date/datetime object
+                if hasattr(value, 'strftime'):
                     student[key] = value.strftime('%Y-%m-%d') if hasattr(value, 'date') else value.strftime('%Y-%m-%d')
-                elif pd.isna(value):  # Handle NaN values
+                elif pd.isna(value):
                     student[key] = None
-        
-        response = jsonify(students_dict)
+
+        response = jsonify({
+            'students': students_dict,
+            'total': total,
+            'page': page,
+            'page_size': page_size,
+            'total_pages': (total + page_size - 1) // page_size
+        })
         response.headers['Content-Type'] = 'application/json'
         return response
     except Exception as e:
